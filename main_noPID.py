@@ -66,10 +66,9 @@ print('D:', d_read)
 
 # Rest of the code...
 print(ls335.ask('*IDN?'))
-ls335.write('RAMP 2 1 2')
+#ls335.write('RAMP 2 1 5')
 #ls335.setpoint_1 = input("Please input PID controller target temperature in Kelvin.")
-#ls335.setpoint_1 = 273
-#ls335.heater_range = 'high'
+
 
 ############################################
 
@@ -87,14 +86,26 @@ print(ls335)
 #print(ls335.query('*IDN?'))
 
 ####get test type
-
+test_type = "log"
+'''
+test_type = input("[r]esistance discharge, resistance [c]harge or [v]oltage? \n press r/c/v")
+if (test_type == "r"):
+    test_type = test_type + input("what value?")
+else:
+    test_type = '_'''
 
 # init csv file, time and column headers
 
+'''temperature = 210
+ls335.setpoint_1 = temperature
+ls335.heater_range = 'off'''
+
+
 print('data to cvs save start!')
 
-with open("log" + '@' + str(ls335.setpoint_1) +'K@' + get_formatted_date_time() + '.csv', 'w') as f:
-    print("File at:\n"+ __file__+'output\\' + "log" + get_formatted_date_time() + '.csv')
+
+with open('output\\' + test_type + '@' + str(temperature) +'K@' + get_formatted_date_time() + '.csv', 'w') as f:
+    print("File at:\n"+ __file__+'output\\' + test_type + get_formatted_date_time() + '.csv')
     f_writer = csv.writer(f)
     data_line = []
     data_line.append('time [s]')
@@ -105,21 +116,24 @@ with open("log" + '@' + str(ls335.setpoint_1) +'K@' + get_formatted_date_time() 
     f_writer.writerow(data_line)
     print(data_line)
     start_time = time.time()
-
+    curr_time = 0
     ####
+    i = 0
     while True:
-        temperature_A = ls335.temperature_A
+        curr_time=time.time() - start_time
+
+
+        print(ls335.setpoint_1)
         data_line.clear()
-        data_line.append(time.time() - start_time)
+        data_line.append(curr_time)
         data_line.append(float(fluke8846a.query(':MEAS:VOLT:DC?')))
         kdata = keithley.query(':MEAS:CURR:DC?')
         data_line.append((kdata[0:kdata.index(',')]))
-        data_line.append(temperature_A)
-        data_line.append(ls335.setpoint_1)
+        data_line.append(ls335.temperature_A)
+        data_line.append(ls335.temperature_B)
+        data_line.append(temperature - 5*i)
         f_writer.writerow(data_line)
         print(data_line)
-        if (time.time() - start_time > 10):
-            break
 
     f.close()
     #################

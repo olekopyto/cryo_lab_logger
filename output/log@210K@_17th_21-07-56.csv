@@ -1,0 +1,2 @@
+time [s],voltage [V],current [...],temperature_A [K],setpoint [K]
+0.0,1.343512,+11.47575E-03NADC,300.27,210

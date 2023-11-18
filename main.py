@@ -48,9 +48,9 @@ fluke8846a = rm.open_resource('GPIB0::1::INSTR')
 keithley = rm.open_resource('GPIB0::16::INSTR')
 ls335 = LakeShore331('GPIB::12::INSTR')
 # Set the PID parameters, ramp - PID 200 100 10, stabilization - PID 125 12 2 (last on ramp 100 20 10) | 100 20 2
-p_value = 125
-i_value = 12
-d_value = 2
+p_value = 50
+i_value = 5
+d_value = 1
 set_pid_parameters(ls335, p_value, i_value, d_value)
 print('PID parameters set successfully.')
 
@@ -66,7 +66,7 @@ print('D:', d_read)
 
 # Rest of the code...
 print(ls335.ask('*IDN?'))
-ls335.write('RAMP 2 1 5')
+ls335.write('RAMP 1 1 0.1')
 #ls335.setpoint_1 = input("Please input PID controller target temperature in Kelvin.")
 
 
@@ -96,7 +96,7 @@ else:
 
 # init csv file, time and column headers
 
-temperature = 215
+temperature = 295
 ls335.setpoint_1 = temperature
 ls335.heater_range = 'high'
 
@@ -138,7 +138,7 @@ with open('output\\' + test_type + '@' + str(temperature) +'K@' + get_formatted_
         data_line.append((kdata[0:kdata.index(',')]))
         data_line.append(ls335.temperature_A)
         data_line.append(ls335.temperature_B)
-        data_line.append(temperature)
+        data_line.append(ls335.setpoint_1 )
         f_writer.writerow(data_line)
         print(data_line)
 

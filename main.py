@@ -1,149 +1,25 @@
-import pandas as pd
-import pyvisa
-from pymeasure.instruments.srs import SR830
-from pymeasure.instruments.lakeshore import LakeShore331
-import pymeasure.instruments.lakeshore
-import matplotlib.pyplot as plt
-from datetime import datetime as dt
-import time
 import csv
-from datetime import datetime
-
-
-########################################################################################
-def set_pid_parameters(instrument, p_value, i_value, d_value):
-    instrument.write('PID 1,{:.1f},{:.1f},{:.1f}'.format(p_value, i_value, d_value))
-
-
-def read_pid_parameters(instrument):
-    instrument.write('PID?')
-    response = instrument.read()
-    p_value, i_value, d_value = map(float, response.strip().split(','))
-    return p_value, i_value, d_value
-
-
-def set_pid_parameters(instrument, p_value, i_value, d_value):
-    instrument.write('PID 1,{:.1f},{:.1f},{:.1f}'.format(p_value, i_value, d_value))
-
-
-def read_pid_parameters(instrument):
-    instrument.write('PID?')
-    response = instrument.read()
-    p_value, i_value, d_value = map(float, response.strip().split(','))
-    return p_value, i_value, d_value
-
-
-def get_formatted_date_time():
-    now = datetime.now()
-    formatted_date_time = now.strftime("_%dth_%H-%M-%S")
-    return formatted_date_time
-
-
-########################################################################################
-#in case of no tem readout
-temperature_A = 0
-############################
-rm = pyvisa.ResourceManager()
-print(rm.list_resources())
-fluke8846a = rm.open_resource('GPIB0::1::INSTR')
-keithley = rm.open_resource('GPIB0::16::INSTR')
-ls335 = LakeShore331('GPIB::12::INSTR')
-# Set the PID parameters, ramp - PID 200 100 10, stabilization - PID 125 12 2 (last on ramp 100 20 10) | 100 20 2
-p_value = 50
-i_value = 5
-d_value = 1
-set_pid_parameters(ls335, p_value, i_value, d_value)
-print('PID parameters set successfully.')
-
-# Read and display the PID parameters
-p_read, i_read, d_read = read_pid_parameters(ls335)
-print('PID parameters read from the instrument:')
-print('P:', p_read)
-print('I:', i_read)
-print('D:', d_read)
-
-# Set up the second channel, if needed
-
-
-# Rest of the code...
-print(ls335.ask('*IDN?'))
-ls335.write('RAMP 1 1 0.3')
-#ls335.setpoint_1 = input("Please input PID controller target temperature in Kelvin.")
-
-
-############################################
-
-
-print(fluke8846a)
-print(fluke8846a.query('*IDN?'))
-print(fluke8846a.query(':MEAS:VOLT:DC? '))  # error niby ale jest query i dziala.
-
-print(keithley)
-print(keithley.query('*IDN?'))
-
-print(keithley.query(':MEAS:CURR:DC?'))  # error niby ale jest query i dziala.
-
-print(ls335)
-#print(ls335.query('*IDN?'))
-
-####get test type
-test_type = "log"
-'''
-test_type = input("[r]esistance discharge, resistance [c]harge or [v]oltage? \n press r/c/v")
-if (test_type == "r"):
-    test_type = test_type + input("what value?")
-else:
-    test_type = '_'''
-
-# init csv file, time and column headers
-
-temperature = 300
-ls335.setpoint_1 = temperature
-ls335.heater_range = 'high'
-
-
-print('data to cvs save start!')
-
-
-with open('output\\' + test_type + '@' + str(temperature) +'K@' + get_formatted_date_time() + '.csv', 'w') as f:
-    print("File at:\n"+ __file__+'output\\' + test_type + get_formatted_date_time() + '.csv')
-    f_writer = csv.writer(f)
-    data_line = []
-    data_line.append('time [s]')
-    data_line.append('voltage [V]')
-    data_line.append('current [A]')
-    data_line.append('temperature_A [K]')
-    data_line.append('temperature_B [K]')
-    data_line.append('setpoint [K]')
-    #data_line.append('heater [%]')
-    f_writer.writerow(data_line)
-    print(data_line)
-    start_time = time.time()
-    curr_time = 0
-    ####
-    i = 0
-    while True:
-        curr_time=time.time() - start_time
-        print(ls335.setpoint_1)
-        data_line.clear()
-        '''if curr_time > 0 and int(curr_time) % 180 == 0:
-            if input("Do you want to change the temperature? (y/n): ") == 'y':
+with open('in.csv', 'r') as rfile:
+    with open('out.csv', 'w', newline='') as wfile:
+        csv_reader = csv.reader(rfile)
+        csv_writer = csv.writer(wfile)
+        flag = 0
+        for row in csv_reader:
+            print(row)
+            i = 0
+            line = []
+            for column in row:
+                if i == 1 and len(column) > 1:
+                    if column[1] > '4':
+                        flag = 1
+                        print(flag, column[1])
+                        n_column = column[:-1] + '1'
+                        line.append(n_column)
+                    else:
+                        line.append(column)
+                else:
+                    line.append(column)
                 i += 1
-                new_setpoint = temperature - 5 * i
-                ls335.setpoint_1 = new_setpoint
-                print(f"Changed setpoint to {new_setpoint} K")'''
-
-        data_line.append(curr_time)
-        data_line.append((fluke8846a.query(':MEAS:VOLT:DC? '))[:-1])
-        kdata = keithley.query(':MEAS:CURR:DC?')
-        data_line.append((kdata[0:kdata.index(',')])[:-4])
-        data_line.append(ls335.temperature_A)
-        data_line.append(ls335.temperature_B)
-        data_line.append(ls335.setpoint_1)
-        #data_line.append(ls335.ask('HEAT:OUTP? 1'))
-        f_writer.writerow(data_line)
-        print(data_line)
-        time.sleep(2)
-
-    f.close()
-    #################
+            if len(line) > 1:
+                csv_writer.writerow(line)
+                print("wrote:", line)

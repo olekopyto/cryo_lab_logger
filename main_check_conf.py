@@ -2,7 +2,6 @@ import pandas as pd
 import pyvisa
 from pymeasure.instruments.srs import SR830
 from pymeasure.instruments.lakeshore import LakeShore331
-import pymeasure.instruments.lakeshore
 import matplotlib.pyplot as plt
 from datetime import datetime as dt
 import time
@@ -67,7 +66,7 @@ print('D:', d_read)
 
 # Rest of the code...
 print(ls335.ask('*IDN?'))
-ls335.write('RAMP 1 1 0.3')
+ls335.write('RAMP 1 1 0.1')
 #ls335.setpoint_1 = input("Please input PID controller target temperature in Kelvin.")
 
 
@@ -76,7 +75,7 @@ ls335.write('RAMP 1 1 0.3')
 
 print(fluke8846a)
 print(fluke8846a.query('*IDN?'))
-print(fluke8846a.query(':MEAS:VOLT:DC? '))  # error niby ale jest query i dziala.
+
 
 print(keithley)
 print(keithley.query('*IDN?'))
@@ -85,7 +84,9 @@ print(keithley.query(':MEAS:CURR:DC?'))  # error niby ale jest query i dziala.
 
 print(ls335)
 #print(ls335.query('*IDN?'))
-
+heater_output_setting = ls335.ask('HEAT:OUTP?')
+print('Heater Output Setting:', ls335.write('HEAT:OUTP? 1'))
+print(dir(ls335))
 ####get test type
 test_type = "log"
 '''
@@ -96,54 +97,3 @@ else:
     test_type = '_'''
 
 # init csv file, time and column headers
-
-temperature = 300
-ls335.setpoint_1 = temperature
-ls335.heater_range = 'high'
-
-
-print('data to cvs save start!')
-
-
-with open('output\\' + test_type + '@' + str(temperature) +'K@' + get_formatted_date_time() + '.csv', 'w') as f:
-    print("File at:\n"+ __file__+'output\\' + test_type + get_formatted_date_time() + '.csv')
-    f_writer = csv.writer(f)
-    data_line = []
-    data_line.append('time [s]')
-    data_line.append('voltage [V]')
-    data_line.append('current [A]')
-    data_line.append('temperature_A [K]')
-    data_line.append('temperature_B [K]')
-    data_line.append('setpoint [K]')
-    #data_line.append('heater [%]')
-    f_writer.writerow(data_line)
-    print(data_line)
-    start_time = time.time()
-    curr_time = 0
-    ####
-    i = 0
-    while True:
-        curr_time=time.time() - start_time
-        print(ls335.setpoint_1)
-        data_line.clear()
-        '''if curr_time > 0 and int(curr_time) % 180 == 0:
-            if input("Do you want to change the temperature? (y/n): ") == 'y':
-                i += 1
-                new_setpoint = temperature - 5 * i
-                ls335.setpoint_1 = new_setpoint
-                print(f"Changed setpoint to {new_setpoint} K")'''
-
-        data_line.append(curr_time)
-        data_line.append((fluke8846a.query(':MEAS:VOLT:DC? '))[:-1])
-        kdata = keithley.query(':MEAS:CURR:DC?')
-        data_line.append((kdata[0:kdata.index(',')])[:-4])
-        data_line.append(ls335.temperature_A)
-        data_line.append(ls335.temperature_B)
-        data_line.append(ls335.setpoint_1)
-        #data_line.append(ls335.ask('HEAT:OUTP? 1'))
-        f_writer.writerow(data_line)
-        print(data_line)
-        time.sleep(2)
-
-    f.close()
-    #################
